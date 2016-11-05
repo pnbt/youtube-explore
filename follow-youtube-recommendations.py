@@ -8,15 +8,15 @@ __author__ = 'Guillaume Chaslot'
         4) stores the results in a json file
 """
 
-
-
 import urllib2
 import re
 import json
 import sys
 import argparse
+import time
 
 from bs4 import BeautifulSoup
+
 
 
 RECOMMENDATIONS_PER_VIDEO = 1
@@ -30,14 +30,13 @@ class YoutubeFollower():
         # Name
         self._name = name
         self._alltime = alltime
-
-        self._verbose = verbose;
+        self._verbose = verbose
 
         # Dict video_id to {'likes': ,
         #                   'dislikes': ,
         #                   'views': ,
         #                   'recommendations': []}
-        self._video_infos = self.try_to_load_video_infos()
+        self._video_infos = {} # self.try_to_load_video_infos()
 
         # Dict search terms to [video_ids]
         self._search_infos = {}
@@ -48,7 +47,7 @@ class YoutubeFollower():
         ascii_count = text_count.encode('ascii', 'ignore')
         # Ignore non numbers
         p = re.compile('[\d,]+')
-        return int(p.findall(ascii_count)[0])
+        return int(p.findall(ascii_count)[0].replace(',',''))
 
     def get_search_results(self, search_terms, max_results):
         assert max_results < 20, 'max_results was not implemented to be > 20 in order to keep the code simpler'
@@ -76,15 +75,15 @@ class YoutubeFollower():
         soup = BeautifulSoup(html, "lxml")
 
         videos = []
-        for item_section in soup.findAll('ol', {'class': 'item-section'}):
-            for video_index in range(0, 20):
-                video = item_section.contents[video_index * 2 + 1].li['data-video-ids']
-                videos.append(video)
+        for item_section in soup.findAll('div', {'class': 'yt-lockup-dismissable'}):
+            video = item_section.contents[0].contents[0]['href'].split('=')[1]
+            print video
+            videos.append(video)
 
         self._search_infos[search_terms] = videos
         return videos[0:max_results]
 
-    def get_recommendations(self, video_id, nb_recos_wanted):
+    def get_recommendations(self, video_id, nb_recos_wanted, depth):
         if video_id in self._video_infos:
             video = self._video_infos[video_id]
             recos_returned = []
@@ -92,8 +91,6 @@ class YoutubeFollower():
                 recos_returned.append(reco)
                 if len(recos_returned) >= nb_recos_wanted:
                     return recos_returned[0:nb_recos_wanted]
-                print ('Warning: ' + video_id + ' does not have enough recommendations: ' + repr(recos_returned))
-                return recos_returned
 
         url = "https://www.youtube.com/watch?v=" + video_id
         html = urllib2.urlopen(url)
@@ -133,7 +130,7 @@ class YoutubeFollower():
                 upnext = False
             else:
                 # 19 Otherss
-                for i in range(1, 20):
+                for i in range(1, 19):
                     try:
                         recos.append(video_list.contents[i].contents[1].contents[1]['href'].replace('/watch?v=', ''))
                     except IndexError:
@@ -143,14 +140,20 @@ class YoutubeFollower():
                         if self._verbose:
                             print ('Could not get a recommendation because of malformed content')
 
+        title = ''
         for eow_title in soup.findAll('span', {'id': 'eow-title'}):
             title = eow_title.text.strip()
 
-        self._video_infos[video_id] = {'views': views,
-                                       'likes': likes,
-                                       'dislikes': dislikes,
-                                       'recommendations': recos,
-                                       'title': title}
+        if title == '':
+            print 'WARNING: title not found'
+
+        if video_id not in self._video_infos:
+            self._video_infos[video_id] = {'views': views,
+                                           'likes': likes,
+                                           'dislikes': dislikes,
+                                           'recommendations': recos,
+                                           'title': title,
+                                           'depth': depth}
 
         print repr(self._video_infos[video_id])
         return recos[0:nb_recos_wanted]
@@ -160,7 +163,7 @@ class YoutubeFollower():
             return [seed]
         current_video = seed
         all_recos = []
-        for video in self.get_recommendations(current_video, branching):
+        for video in self.get_recommendations(current_video, branching, depth):
             all_recos.extend(self.get_n_recommendations(video, branching, depth -1))
         return all_recos
 
@@ -188,13 +191,17 @@ class YoutubeFollower():
 
     def save_video_infos(self):
         print 'Wrote file:'
-        print '../data/video-infos-' + self._name + '.json'
-        with open('../data/video-infos-' + self._name + '.json', 'w') as fp:
+        print 'data/video-infos-' + self._name + '.json'
+        with open('data/video-infos-' + self._name + '.json', 'w') as fp:
+            json.dump(self._video_infos, fp)
+
+        date = time.strftime('%Y%m%d')
+        with open('data/video-infos-' + self._name + '-' + date + '.json', 'w') as fp:
             json.dump(self._video_infos, fp)
 
     def try_to_load_video_infos(self):
         try:
-            with open('../data/video-infos-' + self._name + '.json', 'r') as fp:
+            with open('data/video-infos-' + self._name + '.json', 'r') as fp:
                 return json.load(fp)
         except Exception as e:
             print 'Failed to load from graph ' + repr(e)
@@ -223,7 +230,7 @@ class YoutubeFollower():
                 popularity = video['likes'] / float(video['likes'] + video['dislikes'] + 1)
 
             if self.video_is_mature(video):
-                nodes.append({'id': video_id, 'size': input_links_counts.get(video_id, 0), 'popularity': popularity, 'type': 'circle', 'likes': video['likes'], 'dislikes': video['dislikes'], 'views': video['views']})
+                nodes.append({'id': video_id, 'size': input_links_counts.get(video_id, 0), 'popularity': popularity, 'type': 'circle', 'likes': video['likes'], 'dislikes': video['dislikes'], 'views': video['views'], 'depth': video['depth']})
             link = 0
             for reco in self._video_infos[video_id]['recommendations']:
                 if reco in self._video_infos:
@@ -236,7 +243,10 @@ class YoutubeFollower():
         graph['links'] = links
         with open('./graph-' + self._name + '.json', 'w') as fp:
             json.dump(graph, fp)
-        print 'Wrote graph as: ' + 'graph-' + self._name + '.json'
+        date = time.strftime('%Y-%m-%d')
+        with open('./graph-' + self._name + '-' + date + '.json', 'w') as fp:
+            json.dump(graph, fp)
+        print 'Wrote graph as: ' + './graph-' + self._name + '-' + date + '.json'
 
 def main():
     global parser

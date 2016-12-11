@@ -17,8 +17,6 @@ import time
 
 from bs4 import BeautifulSoup
 
-
-
 RECOMMENDATIONS_PER_VIDEO = 1
 RESULTS_PER_SEARCH = 1
 
@@ -40,7 +38,6 @@ class YoutubeFollower():
 
         # Dict search terms to [video_ids]
         self._search_infos = {}
-
 
     def clean_count(self, text_count):
         # Ignore non ascii
@@ -77,7 +74,6 @@ class YoutubeFollower():
         videos = []
         for item_section in soup.findAll('div', {'class': 'yt-lockup-dismissable'}):
             video = item_section.contents[0].contents[0]['href'].split('=')[1]
-            print video
             videos.append(video)
 
         self._search_infos[search_terms] = videos
@@ -93,7 +89,12 @@ class YoutubeFollower():
                     return recos_returned[0:nb_recos_wanted]
 
         url = "https://www.youtube.com/watch?v=" + video_id
-        html = urllib2.urlopen(url)
+        while True:
+            try:
+                html = urllib2.urlopen(url)
+                break
+            except urllib2.URLError:
+                time.sleep(1)
         soup = BeautifulSoup(html, "lxml")
 
         # Views
@@ -186,8 +187,17 @@ class YoutubeFollower():
         counts = self.count(all_recos)
         print '\n\n\nSearch term = ' + search_term + '\n'
         sorted_videos = sorted(counts,  key=counts.get, reverse=True)
+        idx = 1
         for video in sorted_videos:
-            print str(counts[video]) + ' https://www.youtube.com/watch?v=' + video
+            try:
+                current_title = self._video_infos[video]['title']
+                print str(idx) + ') Recommended ' + str(counts[video]) + ' times: '\
+                      ' https://www.youtube.com/watch?v=' + video + ' Title: ' + current_title
+                if idx % 20 == 0:
+                    print ''
+                idx += 1
+            except KeyError:
+                pass
 
     def save_video_infos(self):
         print 'Wrote file:'
@@ -256,7 +266,7 @@ def main():
     parser.add_argument('--searches', default='1', type=int, help='The number of search results to start the exploration')
     parser.add_argument('--branch', default='3', type=int, help='The branching factor of the exploration')
     parser.add_argument('--depth', default='5', type=int, help='The depth of the exploration')
-    parser.add_argument('--alltime', default=False, type=bool, help='If we get results by highest number of views')
+    parser.add_argument('--alltime', default=False, type=bool, help='If we get search results ordered by highest number of views')
     args = parser.parse_args()
 
     if args.alltime:

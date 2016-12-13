@@ -14,11 +14,11 @@ python follow-youtube-recommendations.py  --query="Do vaccines cause autism?" --
 
 ## Results:
 
-All videos, their title, view count, likes, and dislikes are saved in a .json file.
+All videos, their title, view count, likes, and dislikes are saved in a .json file with the name you provided.
 
-Example results for "Do vaccines cause autism?" ran on 12/12/16:
+On the command line, the most recommended videos are displayed.
 
-Most recommended videos:
+Most recommended videos for "Do vaccines cause autism?" ran on 12/12/16:
 
 1) Recommended 20 times:  https://www.youtube.com/watch?v=K1m3TjokVU4 Title: Silent Epidemic; The Untold Story of Vaccines   Movie dire
 

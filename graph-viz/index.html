@@ -1,0 +1,142 @@
+<!DOCTYPE HTML>
+<!--
+	Ion by TEMPLATED
+	templated.co @templatedco
+	Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
+-->
+<html>
+	<head>
+		<title> Youtube Vizualization </title>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<meta name="description" content="" />
+		<meta name="keywords" content="" />
+		<script src="js/jquery.min.js"></script>
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+		<script src="js/skel.min.js"></script>
+		<script src="js/skel-layers.min.js"></script>
+		<script src="js/init.js"></script>
+		<noscript>
+			<link rel="stylesheet" href="css/skel.css" />
+			<link rel="stylesheet" href="css/style.css" />
+			<link rel="stylesheet" href="css/style-xlarge.css" />
+		</noscript>
+	</head>
+	<body id="top">
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="contactModal">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">How we obtained the data:</h4>
+          </div>
+          <div class="modal-body">
+
+              <p>guillaume@intuitiveai.com</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Got it!</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="infoModal0">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Methodology:</h4>
+          </div>
+          <div class="modal-body">
+            <p>How the data was gathered:</p>
+            <ol>
+                <li>We took the 5 first results for a search on YouTube</li>
+                <li>We followed the top 5 recommendations </li>
+                <li>We repeated this last step 5 times </li>
+            </ol>
+            <p>Legend:</p>
+            <ul>
+                <li>Circles are videos: <img src="images/nodes.png" style="width:70px; height: 70px; margin-left: 95px;"> </li>
+                <li>Links are recommendations: <img src="images/link.png" style="width:70px; height: 70px; margin-left: 15px;"></li>
+                <li>Light green circle = 100% likes <div style="display:inline-block;width:23px; height: 23px;margin-left: 30px; background-color:#00ff00;border-radius:50px;margin-top:10px;margin-bottom:-5px"></div></li>
+                <li>Red circle = 50% dislikes<div style="display:inline-block;width:23px; height: 23px;margin-left: 73px; background-color:red;color:red;margin-bottom:-5px;border-radius:51px"></div></li>
+                <li>Bigger circle: higher number of views</li>
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Got it!</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="infoModal1">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">YouTube Explorator</h4>
+          </div>
+          <div class="modal-body">
+          <ul>
+                <li>Circles are videos: <img src="images/nodes.png" style="width:70px; height: 70px; margin-left: 95px;"> </li>
+                <li>Links are recommendations: <img src="images/link.png" style="width:70px; height: 70px; margin-left: 15px;"></li>
+                <li>Light green circle = 100% likes <div style="display:inline-block;width:23px; height: 23px;margin-left: 30px; background-color:#00ff00;border-radius:50px;margin-top:10px;margin-bottom:-5px"></div></li>
+                <li>Red circle = 50% dislikes<div style="display:inline-block;width:23px; height: 23px;margin-left: 73px; background-color:red;color:red;margin-bottom:-5px;border-radius:51px"></div></li>
+                <li>Bigger circle: higher number of views</li>
+          </ul>
+          <p><strong>Click on the videos to watch them</strong></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Got it!</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <!-- Header -->
+        <!--<header id="header" class="skel-layers-fixed">-->
+            <!--<nav id="nav">-->
+                <!--<ul>-->
+                    <!--<li><a href="graph.html">Vizualize youtube's recommendations for:</a></li>-->
+                <!--</ul>-->
+            <!--</nav>-->
+        <!--</header>-->
+    <!-- Main -->
+			<!--<section id="main" class="wrapper style1">-->
+				<!--<div class="container">-->
+                    <iframe id="video"></iframe>
+                    <svg id="svg"></svg>
+                    <div class="tag-container">
+                        <div class="btn btn-default tag" id="clinton" onclick="select_graph_from_element_id()">Search from: Clinton</div>
+                        <div class="btn btn-default tag" id="trump" onclick="select_graph_from_element_id()">Search from: Trump</div>
+                        <div class="btn btn-default tag" id="info" onclick="$('#infoModal0').modal()">Methodology</div>
+
+                    </div>
+                    <div class="info-bar">We are showing the reach of the above video <a href="javascript:hide_info_bar();" class="btn">escape</a></div>
+                    <script src="//d3js.org/d3.v4.min.js"></script>
+                    <script src="/js/d3-tip.js"></script>
+                    <script src="/js/tooltip.js"></script>
+                    <script src="/js/graph-builder.js"></script>
+
+        <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+        <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+    <!-- script pour google analytics -->
+    <script>
+
+        var googleAnalyticsId = 'UA-60369594-1';
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', googleAnalyticsId, 'auto');
+            ga('send', 'pageview');
+    </script>
+
+
+	</body>
+
+</html>

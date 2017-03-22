@@ -269,12 +269,12 @@ class YoutubeFollower():
             except KeyError:
                 pass
 
-    def get_top_videos(self, videos, max_length_count):
+    def get_top_videos(self, videos, counts, max_length_count):
         video_infos = []
         for video in videos[:max_length_count]:
             try:
                 video_infos.append(self._video_infos[video])
-                video_infos[-1]['recommendations'] = ''
+                video_infos[-1]['recommendations'] = counts[video]
             except KeyError:
                 pass
         return video_infos
@@ -287,7 +287,7 @@ def compare_keywords(query, search_results, branching, depth):
                           search_results=search_results,
                           branching=branching,
                           depth=depth)
-        top_videos[keyword] = yf.get_top_videos(top_recommended, 100)
+        top_videos[keyword] = yf.get_top_videos(top_recommended, counts, 100)
         yf.print_videos(top_recommended, counts, 5)
         yf.save_video_infos(keyword)
 

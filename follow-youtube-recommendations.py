@@ -279,7 +279,9 @@ class YoutubeFollower():
                 pass
         return video_infos
 
-def compare_keywords(query, search_results, branching, depth):
+def compare_keywords(query, search_results, branching, depth, name):
+    date = time.strftime('%Y-%m-%d')
+    print 'Running, will save the resulting json to: results/' + name + '-depth-' + str(depth) + '-on-' + date + '.json'
     top_videos = {}
     for keyword in query.split(','):
         yf = YoutubeFollower(verbose=True, name=keyword, alltime=False)
@@ -291,15 +293,15 @@ def compare_keywords(query, search_results, branching, depth):
         yf.print_videos(top_recommended, counts, 5)
         yf.save_video_infos(keyword)
 
-    date = time.strftime('%Y%m%d')
-    with open('results/' + query + '-' + date + '.json', 'w') as fp:
+    with open('results/' + name + '-depth-' + str(depth) + '-on-' + date + '.json', 'w') as fp:
         json.dump(top_videos, fp)
 
 def main():
     global parser
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--query', help='The start search query')
-    parser.add_argument('--searches', default='3', type=int, help='The number of search results to start the exploration')
+    parser.add_argument('--name', help='Name given to the file')
+    parser.add_argument('--searches', default='5', type=int, help='The number of search results to start the exploration')
     parser.add_argument('--branch', default='3', type=int, help='The branching factor of the exploration')
     parser.add_argument('--depth', default='5', type=int, help='The depth of the exploration')
     parser.add_argument('--alltime', default=False, type=bool, help='If we get search results ordered by highest number of views')
@@ -307,7 +309,7 @@ def main():
         help='If true, writes a .html page with the name which compare most recommended videos and top rated ones.')
 
     args = parser.parse_args()
-    compare_keywords(args.query, args.searches, args.branch, args.depth)
+    compare_keywords(args.query, args.searches, args.branch, args.depth, args.name)
 
     return 0
 

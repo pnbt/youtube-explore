@@ -290,7 +290,7 @@ def compare_keywords(query, search_results, branching, depth, name):
                           branching=branching,
                           depth=depth)
         top_videos[keyword] = yf.get_top_videos(top_recommended, counts, 100)
-        yf.print_videos(top_recommended, counts, 5)
+        yf.print_videos(top_recommended, counts, 50)
         yf.save_video_infos(keyword)
 
     with open('results/' + name + '-depth-' + str(depth) + '-on-' + date + '.json', 'w') as fp:

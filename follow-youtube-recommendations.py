@@ -21,7 +21,7 @@ RECOMMENDATIONS_PER_VIDEO = 1
 RESULTS_PER_SEARCH = 1
 
 # NUMBER OF MIN LIKES ON A VIDEO TO CONSIDER IT
-MATURITY_THRESHOLD = 10
+MATURITY_THRESHOLD = 5
 
 class YoutubeFollower():
     def __init__(self, verbose=False, name='', alltime=True):
@@ -71,6 +71,7 @@ class YoutubeFollower():
 
         url = "https://www.youtube.com/results?sp=" + filter + "&q=" + escaped_search_terms
 
+        print ('Going to URL: ' + url)
         html = urllib2.urlopen(url)
         soup = BeautifulSoup(html, "lxml")
 
@@ -84,14 +85,24 @@ class YoutubeFollower():
 
     def get_recommendations(self, video_id, nb_recos_wanted, depth):
         if video_id in self._video_infos:
+
+            # Updating the depth if this video was seen.
+            self._video_infos[video_id]['depth'] = min(self._video_infos[video_id]['depth'], depth)
+            print ('a video was seen at a lower depth')
+
             video = self._video_infos[video_id]
             recos_returned = []
             for reco in video['recommendations']:
-                recos_returned.append(reco)
-                if len(recos_returned) >= nb_recos_wanted:
-                    return recos_returned[0:nb_recos_wanted]
+                # This line avoids to loop around the same videos:
+                if reco not in self._video_infos:
+                    recos_returned.append(reco)
+                    if len(recos_returned) >= nb_recos_wanted:
+                        break
+            print '\n Following recommendations ' + repr(recos_returned) + '\n'
+            return recos_returned
 
         url = "https://www.youtube.com/watch?v=" + video_id
+
         while True:
             try:
                 html = urllib2.urlopen(url)
@@ -133,7 +144,7 @@ class YoutubeFollower():
                 recos.append(video_list.contents[1].contents[1].contents[1]['href'].replace('/watch?v=', ''))
                 upnext = False
             else:
-                # 19 Otherss
+                # 19 Others
                 for i in range(1, 19):
                     try:
                         recos.append(video_list.contents[i].contents[1].contents[1]['href'].replace('/watch?v=', ''))
@@ -162,23 +173,27 @@ class YoutubeFollower():
 
         video = self._video_infos[video_id]
         print (repr(video['title'] + ' ' + str(video['views']) + ' views , depth: ' + str(video['depth'])))
-        return recos[0:nb_recos_wanted]
+        print (repr(video['recommendations']))
+        return recos[:nb_recos_wanted]
 
     def get_n_recommendations(self, seed, branching, depth):
         if depth is 0:
             return [seed]
         current_video = seed
-        all_recos = []
+        all_recos = [seed]
         for video in self.get_recommendations(current_video, branching, depth):
             all_recos.extend(self.get_n_recommendations(video, branching, depth - 1))
         return all_recos
 
     def compute_all_recommendations_from_search(self, search_terms, search_results, branching, depth):
         search_results = self.get_search_results(search_terms, search_results)
+        print ('Search results ' + repr(search_results))
+
         all_recos = []
         for video in search_results:
             all_recos.extend(self.get_n_recommendations(video, branching, depth))
-            print ('One search result done')
+            print ('\n\n\nNext search: ')
+        all_recos.extend(search_results)
         return all_recos
 
     def count(self, iterator):
@@ -191,6 +206,7 @@ class YoutubeFollower():
         all_recos = self.compute_all_recommendations_from_search(search_term, search_results, branching, depth)
         counts = self.count(all_recos)
         print ('\n\n\nSearch term = ' + search_term + '\n')
+        print ('counts: ' + repr(counts))
         sorted_videos = sorted(counts, key=counts.get, reverse=True)
         return sorted_videos, counts
 
@@ -262,7 +278,8 @@ class YoutubeFollower():
             try:
                 current_title = self._video_infos[video]['title']
                 print (str(idx) + ') Recommended ' + str(counts[video]) + ' times: '
-                    ' https://www.youtube.com/watch?v=' + video + ' , Title: ' + current_title)
+                    ' https://www.youtube.com/watch?v=' + video + ' , Title: ' + current_title +
+                    ' after ' + str(self._video_infos[video]['depth']) + ' clicks')
                 if idx % 20 == 0:
                     print ('')
                 idx += 1
@@ -271,13 +288,24 @@ class YoutubeFollower():
 
     def get_top_videos(self, videos, counts, max_length_count):
         video_infos = []
-        for video in videos[:max_length_count]:
+        for video in videos:
             try:
                 video_infos.append(self._video_infos[video])
                 video_infos[-1]['recommendations'] = counts[video]
             except KeyError:
                 pass
-        return video_infos
+
+        # Computing the average recommendations of the video:
+        # The average is computing only on the top videos, so it is an underestimation of the actual average.
+        if video_infos is []:
+            return []
+        sum_recos = 0
+        for video in video_infos:
+            sum_recos += video['recommendations']
+        avg = sum_recos / float(len(video_infos))
+        for video in video_infos:
+            video['mult'] = video['recommendations'] / avg
+        return video_infos[:max_length_count]
 
 def compare_keywords(query, search_results, branching, depth, name):
     date = time.strftime('%Y-%m-%d')
@@ -289,9 +317,9 @@ def compare_keywords(query, search_results, branching, depth, name):
                           search_results=search_results,
                           branching=branching,
                           depth=depth)
-        top_videos[keyword] = yf.get_top_videos(top_recommended, counts, 100)
+        top_videos[keyword] = yf.get_top_videos(top_recommended, counts, 150)
         yf.print_videos(top_recommended, counts, 50)
-        yf.save_video_infos(keyword)
+        yf.save_video_infos(name + '-' + keyword)
 
     with open('results/' + name + '-depth-' + str(depth) + '-on-' + date + '.json', 'w') as fp:
         json.dump(top_videos, fp)

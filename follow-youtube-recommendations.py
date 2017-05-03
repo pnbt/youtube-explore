@@ -24,7 +24,7 @@ RESULTS_PER_SEARCH = 1
 MATURITY_THRESHOLD = 5
 
 class YoutubeFollower():
-    def __init__(self, verbose=False, name='', alltime=True):
+    def __init__(self, verbose=False, name='', alltime=True, gl=None, language=None):
         # Name
         self._name = name
         self._alltime = alltime
@@ -38,16 +38,20 @@ class YoutubeFollower():
 
         # Dict search terms to [video_ids]
         self._search_infos = {}
+        self._gl = gl
+        self._language = language
+
+        print ('Location = ' + repr(self._gl) + ' Language = ' + repr(self._language))
 
     def clean_count(self, text_count):
         # Ignore non ascii
         ascii_count = text_count.encode('ascii', 'ignore')
         # Ignore non numbers
         p = re.compile('[\d,]+')
-        return int(p.findall(ascii_count)[0].replace(',',''))
+        return int(p.findall(ascii_count)[0].replace(',', ''))
 
     def get_search_results(self, search_terms, max_results, top_rated=False):
-        assert max_results < 20, 'max_results was not implemented to be > 20 in order to keep the code simpler'
+        assert max_results < 20, 'max_results was not implemented to be > 20'
 
         if self._verbose:
             print ('Searching for {}'.format(search_terms))
@@ -70,9 +74,16 @@ class YoutubeFollower():
                 filter = "EgIQAQ%253D%253D"
 
         url = "https://www.youtube.com/results?sp=" + filter + "&q=" + escaped_search_terms
+        if self._gl:
+            url = url + '&gl=' + self._gl
 
-        print ('Going to URL: ' + url)
-        html = urllib2.urlopen(url)
+        print ('Searching URL: ' + url)
+
+        headers = {}
+        if self._language:
+            headers["Accept-Language"] = self._language
+        url_request = urllib2.Request(url, headers=headers)
+        html = urllib2.urlopen(url_request)
         soup = BeautifulSoup(html, "lxml")
 
         videos = []
@@ -98,7 +109,7 @@ class YoutubeFollower():
                     recos_returned.append(reco)
                     if len(recos_returned) >= nb_recos_wanted:
                         break
-            print '\n Following recommendations ' + repr(recos_returned) + '\n'
+            print ('\n Following recommendations ' + repr(recos_returned) + '\n')
             return recos_returned
 
         url = "https://www.youtube.com/watch?v=" + video_id
@@ -278,8 +289,7 @@ class YoutubeFollower():
             try:
                 current_title = self._video_infos[video]['title']
                 print (str(idx) + ') Recommended ' + str(counts[video]) + ' times: '
-                    ' https://www.youtube.com/watch?v=' + video + ' , Title: ' + current_title +
-                    ' after ' + str(self._video_infos[video]['depth']) + ' clicks')
+                    ' https://www.youtube.com/watch?v=' + video + ' , Title: ' + repr(current_title))
                 if idx % 20 == 0:
                     print ('')
                 idx += 1
@@ -307,12 +317,13 @@ class YoutubeFollower():
             video['mult'] = video['recommendations'] / avg
         return video_infos[:max_length_count]
 
-def compare_keywords(query, search_results, branching, depth, name):
+def compare_keywords(query, search_results, branching, depth, name, gl, language):
     date = time.strftime('%Y-%m-%d')
-    print 'Running, will save the resulting json to: results/' + name + '-depth-' + str(depth) + '-on-' + date + '.json'
+    file_name = 'results/' + name + '-' + date + '.json'
+    print ('Running, will save the resulting json to:' + file_name)
     top_videos = {}
     for keyword in query.split(','):
-        yf = YoutubeFollower(verbose=True, name=keyword, alltime=False)
+        yf = YoutubeFollower(verbose=True, name=keyword, alltime=False, gl=gl, language=language)
         top_recommended, counts = yf.go_deeper_from(keyword,
                           search_results=search_results,
                           branching=branching,
@@ -321,7 +332,7 @@ def compare_keywords(query, search_results, branching, depth, name):
         yf.print_videos(top_recommended, counts, 50)
         yf.save_video_infos(name + '-' + keyword)
 
-    with open('results/' + name + '-depth-' + str(depth) + '-on-' + date + '.json', 'w') as fp:
+    with open(file_name, 'w') as fp:
         json.dump(top_videos, fp)
 
 def main():
@@ -333,11 +344,13 @@ def main():
     parser.add_argument('--branch', default='3', type=int, help='The branching factor of the exploration')
     parser.add_argument('--depth', default='5', type=int, help='The depth of the exploration')
     parser.add_argument('--alltime', default=False, type=bool, help='If we get search results ordered by highest number of views')
+    parser.add_argument('--gl', help='Location passed to YouTube e.g. US, FR, GB, DE...')
+    parser.add_argument('--language', help='Languaged passed to HTML header, en, fr, en-US, ...')
     parser.add_argument('--makehtml', default=False, type=bool,
         help='If true, writes a .html page with the name which compare most recommended videos and top rated ones.')
 
     args = parser.parse_args()
-    compare_keywords(args.query, args.searches, args.branch, args.depth, args.name)
+    compare_keywords(args.query, args.searches, args.branch, args.depth, args.name, args.gl, args.language)
 
     return 0
 

@@ -4,6 +4,18 @@ Where does YouTube's recommendation algorithm bring the user if he follows the r
 This robot follows the recommendations on YouTube from a given search query to find out where they bring you.
 After searching on YouTube and following the recommendations, it prints the 50 most recommended videos.
 
+## Installation
+
+To install the project's python dependencies, you can use pip:
+
+```
+pip install -r requirements
+```
+
+Used dependencies:
+
+* [BeautifulSoup4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
+
 ## Example of usage:
 
 python follow-youtube-recommendations.py  --query="Do vaccines cause autism?" --searches=4 --branch=4 --depth=4 --name="autism"

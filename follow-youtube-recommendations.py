@@ -24,7 +24,7 @@ RESULTS_PER_SEARCH = 1
 MATURITY_THRESHOLD = 5
 
 class YoutubeFollower():
-    def __init__(self, verbose=False, name='', alltime=True, gl=None, language=None):
+    def __init__(self, verbose=False, name='', alltime=True, gl=None, language=None, recent=False):
         # Name
         self._name = name
         self._alltime = alltime
@@ -40,6 +40,7 @@ class YoutubeFollower():
         self._search_infos = {}
         self._gl = gl
         self._language = language
+        self._recent=recent
 
         print ('Location = ' + repr(self._gl) + ' Language = ' + repr(self._language))
 
@@ -299,9 +300,14 @@ class YoutubeFollower():
     def get_top_videos(self, videos, counts, max_length_count):
         video_infos = []
         for video in videos:
+            # If we only care about recent videos, skip videos that have more than 1000 views
+            # TODO: scrap the
             try:
-                video_infos.append(self._video_infos[video])
-                video_infos[-1]['recommendations'] = counts[video]
+                if self._recent and self._video_infos[video]['views'] > 1000:
+                    continue
+                else:
+                    video_infos.append(self._video_infos[video])
+                    video_infos[-1]['recommendations'] = counts[video]
             except KeyError:
                 pass
 
@@ -317,13 +323,13 @@ class YoutubeFollower():
             video['mult'] = video['recommendations'] / avg
         return video_infos[:max_length_count]
 
-def compare_keywords(query, search_results, branching, depth, name, gl, language):
+def compare_keywords(query, search_results, branching, depth, name, gl, language, recent):
     date = time.strftime('%Y-%m-%d')
     file_name = 'results/' + name + '-' + date + '.json'
     print ('Running, will save the resulting json to:' + file_name)
     top_videos = {}
     for keyword in query.split(','):
-        yf = YoutubeFollower(verbose=True, name=keyword, alltime=False, gl=gl, language=language)
+        yf = YoutubeFollower(verbose=True, name=keyword, alltime=False, gl=gl, language=language, recent=recent)
         top_recommended, counts = yf.go_deeper_from(keyword,
                           search_results=search_results,
                           branching=branching,
@@ -346,11 +352,12 @@ def main():
     parser.add_argument('--alltime', default=False, type=bool, help='If we get search results ordered by highest number of views')
     parser.add_argument('--gl', help='Location passed to YouTube e.g. US, FR, GB, DE...')
     parser.add_argument('--language', help='Languaged passed to HTML header, en, fr, en-US, ...')
+    parser.add_argument('--recent', default=False, type=bool, help='Keep only videos that have less than 1000 views')
     parser.add_argument('--makehtml', default=False, type=bool,
         help='If true, writes a .html page with the name which compare most recommended videos and top rated ones.')
 
     args = parser.parse_args()
-    compare_keywords(args.query, args.searches, args.branch, args.depth, args.name, args.gl, args.language)
+    compare_keywords(args.query, args.searches, args.branch, args.depth, args.name, args.gl, args.language, args.recent)
 
     return 0
 

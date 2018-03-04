@@ -56,7 +56,7 @@ class YoutubeFollower():
         assert max_results < 20, 'max_results was not implemented to be > 20'
 
         if self._verbose:
-            print ('Searching for {}'.format(search_terms))
+           print (u'Searching for {}'.format(search_terms))
 
         # Trying to get results from cache
         if search_terms in self._search_infos and len(self._search_infos[search_terms]) >= max_results:
@@ -357,11 +357,14 @@ def compare_keywords(query, search_results, branching, depth, name, gl, language
     with open(file_name, 'w') as fp:
         json.dump(top_videos, fp)
 
+def to_unicode(s):
+    return unicode(s, 'utf-8')
+
 def main():
     global parser
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--query', help='The start search query')
-    parser.add_argument('--name', help='Name given to the file')
+    parser.add_argument('--query', help='The start search query', type=to_unicode)
+    parser.add_argument('--name', help='Name given to the file', type=to_unicode)
     parser.add_argument('--searches', default='5', type=int, help='The number of search results to start the exploration')
     parser.add_argument('--branch', default='3', type=int, help='The branching factor of the exploration')
     parser.add_argument('--depth', default='5', type=int, help='The depth of the exploration')

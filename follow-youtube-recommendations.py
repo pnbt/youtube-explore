@@ -49,14 +49,18 @@ class YoutubeFollower():
         # Ignore non ascii
         ascii_count = text_count.encode('ascii', 'ignore')
         # Ignore non numbers
-        p = re.compile('[\d,]+')
+        p = re.compile(r'[\d,]+')
         return int(p.findall(ascii_count)[0].replace(',', ''))
 
     def get_search_results(self, search_terms, max_results, top_rated=False):
-        assert max_results < 20, 'max_results was not implemented to be > 20'
+        assert max_results <= 20, 'max_results was not implemented to be > 20'
 
         if self._verbose:
             print ('Searching for {}'.format(search_terms))
+            if self._alltime:
+                print("Sorting search results by number of views")
+            else:
+                print("Sorting search restuls by relevance")
 
         # Trying to get results from cache
         if search_terms in self._search_infos and len(self._search_infos[search_terms]) >= max_results:
@@ -149,6 +153,34 @@ class YoutubeFollower():
             except IndexError:
                 pass
 
+        # Duration
+        duration = -1
+        for time_count in soup.findAll('meta', {'itemprop': 'duration'}):
+            try:
+                dur = time_count['content'].replace('PT', '')
+                duration = 0
+                if 'H' in dur:
+                    contents = dur.split('H')
+                    duration += int(contents[0]) * 3600
+                    dur = contents[1]
+                if 'M' in dur:
+                    contents = dur.split('M')
+                    duration += int(contents[0]) * 60
+                    dur = contents[1]
+                if 'S' in dur:
+                    contents = dur.split('S')
+                    duration += int(contents[0])
+
+            except IndexError:
+                pass
+
+        pubdate = ""
+        for datefield in soup.findAll('meta', {'itemprop': 'datePublished'}):
+            try:
+                pubdate = datefield['content']
+            except IndexError:
+                pass
+
         # Channel
         channel = ''
         for item_section in soup.findAll('a', {'class': 'yt-uix-sessionlink'}):
@@ -162,27 +194,19 @@ class YoutubeFollower():
 
         # Recommendations
         recos = []
-        upnext = True
-        for video_list in soup.findAll('ul', {'class': 'video-list'}):
-            if upnext:
-                # Up Next recommendation
-                try:
-                    recos.append(video_list.contents[1].contents[1].contents[1]['href'].replace('/watch?v=', ''))
-                except IndexError:
-                    print ('WARNING Could not get a up next recommendation because of malformed content')
-                    pass
-                upnext = False
-            else:
-                # 19 Others
-                for i in range(1, 19):
-                    try:
-                        recos.append(video_list.contents[i].contents[1].contents[1]['href'].replace('/watch?v=', ''))
-                    except IndexError:
-                        if self._verbose:
-                            print ('Could not get a recommendation because there are not enough')
-                    except AttributeError:
-                        if self._verbose:
-                            print ('WARNING Could not get a recommendation because of malformed content')
+        for video_list in soup.findAll('li', {'class':"video-list-item related-list-item show-video-time"}):
+            try:
+                recos.append(video_list.contents[1].contents[1]['href'].replace('/watch?v=', ''))
+            except IndexError:
+                print ('WARNING Could not get a UP NEXT RECOMMENDATION')
+                pass
+
+        for video_list in soup.findAll('li', {'class':"video-list-item related-list-item show-video-time related-list-item-compact-video"}):    
+            try:
+                recos.append(video_list.contents[1].contents[1]['href'].replace('/watch?v=', ''))
+            except IndexError:
+                print ('WARNING Could not get a RECOMMENDATION')
+                pass
 
         title = ''
         for eow_title in soup.findAll('span', {'id': 'eow-title'}):
@@ -200,13 +224,14 @@ class YoutubeFollower():
                                            'depth': depth,
                                            'id': video_id,
                                            'channel': channel,
+                                           'pubdate': pubdate,
+                                           'duration': duration,
                                            'key': []}
             if self._loopok:
                 self._video_infos[video_id]['key'].append(key)
 
         video = self._video_infos[video_id]
-        print (repr(video_id + ': ' + video['title'] + ' [' + channel + ']{' + repr(key) +'} ' + str(video['views']) + ' views , depth: ' + str(video['depth'])))
-        # print (repr(video['recommendations']))
+        print(video_id + ': ' + video['title'] + ' [' + channel + ']{' + repr(key) +'} ' + str(video['views']) + ' views , recommendations:' + repr(len(recos)))
         return recos[:nb_recos_wanted]
 
     def get_n_recommendations(self, seed, branching, depth, key):
@@ -339,13 +364,17 @@ class YoutubeFollower():
             video['mult'] = video['nb_recommendations'] / avg
         return video_infos[:max_length_count]
 
-def compare_keywords(query, search_results, branching, depth, name, gl, language, recent, loopok):
+def compare_keywords(query, search_results, branching, depth, name, gl, language, recent, loopok, alltime):
+    """
+        Splits the query into keywords around commas and runs a scrapping from each keyword.
+    """
+
     date = time.strftime('%Y-%m-%d')
     file_name = 'results/' + name + '-' + date + '.json'
     print ('Running, will save the resulting json to:' + file_name)
     top_videos = {}
     for keyword in query.split(','):
-        yf = YoutubeFollower(verbose=True, name=keyword, alltime=False, gl=gl, language=language, recent=recent, loopok=loopok)
+        yf = YoutubeFollower(verbose=True, name=keyword, alltime=alltime, gl=gl, language=language, recent=recent, loopok=loopok)
         top_recommended, counts = yf.go_deeper_from(keyword,
                           search_results=search_results,
                           branching=branching,
@@ -380,8 +409,7 @@ def main():
     else:
         print('INFO We will NOT be printing keys - ' + repr(args.loopok))
 
-    compare_keywords(args.query, args.searches, args.branch, args.depth, args.name, args.gl, args.language, args.recent, args.loopok)
-
+    compare_keywords(args.query, args.searches, args.branch, args.depth, args.name, args.gl, args.language, args.recent, args.loopok, args.alltime)
     return 0
 
 if __name__ == "__main__":

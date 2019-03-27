@@ -9,7 +9,7 @@ After searching on YouTube and following the recommendations, it prints the 50 m
 To install the project's python dependencies, you can use pip:
 
 ```
-pip install -r requirements
+pip install -r requirements.txt
 ```
 
 Used dependencies:

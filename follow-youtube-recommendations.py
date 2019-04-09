@@ -60,7 +60,7 @@ class YoutubeFollower():
             if self._alltime:
                 print("Sorting search results by number of views")
             else:
-                print("Sorting search restuls by relevance")
+                print("Sorting search results by relevance")
 
         # Trying to get results from cache
         if search_terms in self._search_infos and len(self._search_infos[search_terms]) >= max_results:

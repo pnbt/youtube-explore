@@ -60,7 +60,7 @@ class YoutubeFollower():
             if self._alltime:
                 print("Sorting search results by number of views")
             else:
-                print("Sorting search restuls by relevance")
+                print("Sorting search results by relevance")
 
         # Trying to get results from cache
         if search_terms in self._search_infos and len(self._search_infos[search_terms]) >= max_results:
@@ -201,7 +201,7 @@ class YoutubeFollower():
                 print ('WARNING Could not get a UP NEXT RECOMMENDATION')
                 pass
 
-        for video_list in soup.findAll('li', {'class':"video-list-item related-list-item show-video-time related-list-item-compact-video"}):    
+        for video_list in soup.findAll('li', {'class':"video-list-item related-list-item show-video-time related-list-item-compact-video"}):
             try:
                 recos.append(video_list.contents[1].contents[1]['href'].replace('/watch?v=', ''))
             except IndexError:
@@ -354,7 +354,7 @@ class YoutubeFollower():
 
         # Computing the average recommendations of the video:
         # The average is computing only on the top videos, so it is an underestimation of the actual average.
-        if video_infos is []:
+        if len(video_infos) == 0:
             return []
         sum_recos = 0
         for video in video_infos:

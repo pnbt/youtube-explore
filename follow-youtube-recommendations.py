@@ -1,3 +1,11 @@
+from __future__ import division
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import chr
+from builtins import str
+from builtins import object
+from past.utils import old_div
 __author__ = 'Guillaume Chaslot'
 
 """
@@ -8,7 +16,7 @@ __author__ = 'Guillaume Chaslot'
         4) stores the results in a json file
 """
 
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import re
 import json
 import sys
@@ -23,7 +31,7 @@ RESULTS_PER_SEARCH = 1
 # NUMBER OF MIN LIKES ON A VIDEO TO COMPUTE A LIKE RATIO
 MIN_LIKES_FOR_LIKE_RATIO = 5
 
-class YoutubeFollower():
+class YoutubeFollower(object):
     def __init__(self, verbose=False, name='', alltime=True, gl=None, language=None, recent=False, loopok=True):
         # Name
         self._name = name
@@ -67,7 +75,7 @@ class YoutubeFollower():
             return self._search_infos[search_terms][0:max_results]
 
         # Escaping search terms for youtube
-        escaped_search_terms = urllib2.quote(search_terms.encode('utf-8'))
+        escaped_search_terms = urllib.parse.quote(search_terms.encode('utf-8'))
 
         # We only want search results that are videos, filtered by viewcoung.
         #  This is achieved by using the youtube URI parameter: sp=CAMSAhAB
@@ -88,8 +96,8 @@ class YoutubeFollower():
         headers = {}
         if self._language:
             headers["Accept-Language"] = self._language
-        url_request = urllib2.Request(url, headers=headers)
-        html = urllib2.urlopen(url_request)
+        url_request = urllib.request.Request(url, headers=headers)
+        html = urllib.request.urlopen(url_request)
         soup = BeautifulSoup(html, "lxml")
 
         videos = []
@@ -123,9 +131,9 @@ class YoutubeFollower():
 
         while True:
             try:
-                html = urllib2.urlopen(url)
+                html = urllib.request.urlopen(url)
                 break
-            except urllib2.URLError:
+            except urllib.error.URLError:
                 time.sleep(1)
         soup = BeautifulSoup(html, "lxml")
 
@@ -361,7 +369,7 @@ class YoutubeFollower():
             sum_recos += video['nb_recommendations']
         avg = sum_recos / float(len(video_infos))
         for video in video_infos:
-            video['mult'] = video['nb_recommendations'] / avg
+            video['mult'] = old_div(video['nb_recommendations'], avg)
         return video_infos[:max_length_count]
 
 def compare_keywords(query, search_results, branching, depth, name, gl, language, recent, loopok, alltime):

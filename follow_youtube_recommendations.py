@@ -58,7 +58,11 @@ class YoutubeFollower(object):
         ascii_count = text_count.encode('ascii', 'ignore')
         # Ignore non numbers
         p = re.compile(r'[\d,]+')
-        return int(p.findall(ascii_count)[0].replace(',', ''))
+        try:
+            res = int(p.findall(ascii_count)[0].replace(',', ''))
+        except TypeError:
+            res = int(p.findall(str(ascii_count).replace('.', ''))[0].replace(',', ''), )
+        return res
 
     def get_search_results(self, search_terms, max_results, top_rated=False):
         assert max_results <= 20, 'max_results was not implemented to be > 20'
@@ -135,6 +139,8 @@ class YoutubeFollower(object):
                 break
             except urllib.error.URLError:
                 time.sleep(1)
+            except KeyboardInterrupt:
+                return []
         soup = BeautifulSoup(html, "lxml")
 
         # Views
@@ -397,8 +403,8 @@ def compare_keywords(query, search_results, branching, depth, name, gl, language
 def main():
     global parser
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--query', help='The start search query')
-    parser.add_argument('--name', help='Name given to the file')
+    parser.add_argument('query', help='The start search query')
+    parser.add_argument('name', help='Name given to the file')
     parser.add_argument('--searches', default='5', type=int, help='The number of search results to start the exploration')
     parser.add_argument('--branch', default='3', type=int, help='The branching factor of the exploration')
     parser.add_argument('--depth', default='5', type=int, help='The depth of the exploration')

@@ -24,5 +24,6 @@ setuptools.setup(
         'console_scripts': [
             'follow-youtube-recommendations=follow_youtube_recommendations:main'
         ]
-    }
+    },
+    install_require=['beautifulsoup4', 'future'],
 )

@@ -18,10 +18,12 @@ Used dependencies:
 
 ## Example of usage:
 
-python2.7 follow-youtube-recommendations.py  --query="global warming,vaccines,nasa" --searches=4 --branch=4 --depth=4 --name="science"
+```shell
+follow-youtube-recommendations "global warming,vaccines,nasa" "science" --searches=4 --branch=4 --depth=4
+```
 
-* --query: query that is made on youtube
+* query "global warming,vaccines,nasa": query that is made on youtube
+* name "science": name under which it will be saved
 * --searches: number of search results from the query to start with
 * --branch: branching factor = number of recommendations that are followed
-* --name: name under which it will be saved
 * --alltime: add this option if you want to start from the most viewed videos for the query (using the option filter by viewcount on youtube)

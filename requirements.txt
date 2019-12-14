@@ -1,2 +1,3 @@
 # Dependencies
 beautifulsoup4
+future
